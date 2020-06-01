@@ -295,3 +295,4 @@ The histogram of the final prices for each simulation:
 <img src="https://i.ibb.co/rkVz4kK/Amznpredhist.png" alt="Amznpredhist" border="0" width = "500">
 
 With these predictions, we can now calcualte Value at Risk, or simply the probability of a certain event occuring and the expected annualized return. We will do this once we create automated versions of this process that can handle multiple stocks and reports certain metrics, included the aforementioned and other CAPM metrics! 
+
