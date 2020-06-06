@@ -530,7 +530,72 @@ ret_sim_df = monte_carlo(['GOOG','AAPL'], days_to_forecast, simulation_trials,  
 Now, we can do Monte Carlo simulations on individual stocks, assuming they are uncorrelated. But usually, people don't choose between stocks A or B. Investors have to choose from an sea of stocks and other possible securities they can invest in! Investors target to maximize returns while avoiding risk, and one way an investor can do that is by diversifying their portfolio. Hence, the next two sections are: Portfolio Optimization theory and code, and Cholesky Decomposition to generate correlated returns. 
 
 ## Portfolio Optimization
+To understand portfolio optimization, we must introduce Markowitz and the Efficient Frontier.
 
-First, we will create a portfolio optimizer that determines the allocation of weights among data that we have - data that is not generated.
+The efficiency frontier is a set of optimal portfolios that offer the highest expected returns for a given volatility - ie risk. Hence, any portfolio that does not lie in the frontier, is suboptimal. This is because these portfolios could provide higher returns for the same amount of risk.
 
-Second, we will replicate the same portfolio algorythm, only this time with the average predicted values of all the runs into the future. 
+Let's exemplify with the case of a portfolio that can only hold 2 stocks: 
+1. Microsoft (MSFT)
+2. UnitedHealth (UNH)
+
+```
+import numpy as np
+import pandas as pd
+from pandas_datareader import data as wb
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+assets = ['MSFT','UNH']
+
+pf_data = pd.DataFrame()
+for t in assets:
+    pf_data[t] = wb.DataReader(t, data_source='yahoo', start='2015-1-1')['Adj Close']
+    
+(pf_data / pf_data.iloc[0]*100).plot(figsize=(15,6))
+```
+<img src="https://i.ibb.co/pfGHQgd/msftunh.png" alt="msftunh" border="0">
+
+```
+log_returns = np.log(pf_data / pf_data.shift(1))
+log_returns.mean()*250
+
+num_assets = len(assets)
+
+weights = np.random.random(num_assets)
+weights /= np.sum(weights)
+
+pfolio_returns = []
+pfolio_volatilities = []
+
+for x in range(1000):
+    weights = np.random.random(num_assets)
+    weights /= np.sum(weights)
+    
+    pfolio_returns.append(np.sum(weights*log_returns.mean())*252)
+    pfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov()*250, weights))))
+    
+pfolio_returns = np.array(pfolio_returns)
+pfolio_volatilities = np.array(pfolio_volatilities)
+
+portfolios = pd.DataFrame({'Return':pfolio_returns,'Volatility':pfolio_volatilities})
+
+portfolios.plot(x='Volatility',y='Return', kind='scatter', figsize=(10,6))
+#plt.axis([0,])
+plt.xlabel('Expected Volatility')
+plt.ylabel('Expected Return')
+
+print(f"Expected Portfolio Return: {round(np.sum(weights * log_returns.mean())*252*100,2)}%")
+print(f"Expected Portfolio Variance: {round(100*np.dot(weights.T, np.dot(log_returns.cov() *252, weights)),2)}%")
+print(f"Expected Portfolio Volatility: {round(100*np.sqrt(np.dot(weights.T, np.dot(log_returns.cov()*252, weights))),2)}%")
+```
+<img src="https://i.ibb.co/0GZ3fSD/efficientfrontier.png" alt="efficientfrontier" border="0">
+
+Expected Portfolio Return: 26.97%
+
+Expected Portfolio Variance: 6.78%
+
+Expected Portfolio Volatility: 26.03%
+
+The image above shows the efficient frontier, with each dot being a portfolio made of the two stocks. The difference between all portfolios is the weight of it attributed to each stock. As we can observe, for the same expected risk (volatility), there are different expected returns. If an investor targets a certain risk and is not on the part of the frontier than maximizes returns, the portfolio is suboptimal.
+
+Next we will leverage Monte Carlo simulations, to calculate the 
